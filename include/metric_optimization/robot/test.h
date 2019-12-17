@@ -2,25 +2,24 @@
 
 #include <Eigen/Dense>
 #include <rbdl/rbdl.h>
-#include "robot_model.h"
 
 using namespace std;
 using namespace Eigen;
 using namespace RigidBodyDynamics;
 typedef Eigen::Matrix<double, 7, 1> Vector7d;
 
-class PandaRBDLModel : public RobotModel
+class RobotRBDLModel
 {
 public:
-  PandaRBDLModel()
+  RobotRBDLModel()
   {
     initialize();
   }
 
-  Affine3d getTransform(const VectorXd &q) override
+  Affine3d getTransform(const VectorXd &q)
   {
-    RigidBodyDynamics::Math::Vector3d x = CalcBodyToBaseCoordinates(*rbdl_model_, q, body_id_[6], ee_position_, true);
-    Eigen::Matrix3d rotation = RigidBodyDynamics::CalcBodyWorldOrientation(*rbdl_model_, q, body_id_[6], true).transpose();
+    auto x = CalcBodyToBaseCoordinates(rbdl_model_, q, body_id_[6], ee_position_, true);
+    Eigen::Matrix3d rotation = RigidBodyDynamics::CalcBodyWorldOrientation(rbdl_model_, q, body_id_[6], true).transpose();
     Eigen::Matrix3d body_to_ee_rotation;
     body_to_ee_rotation.setZero();
     body_to_ee_rotation(0, 0) = 1;
@@ -36,11 +35,11 @@ public:
     return transform;
   }
 
-  MatrixXd getJacobian(const VectorXd &q) override
+  MatrixXd getJacobian(const VectorXd &q)
   {
     MatrixXd j_temp;
     j_temp.resize(6, 7);
-    CalcPointJacobian6D(*rbdl_model_, q, body_id_[6], com_position_[6], j_temp, true);
+    CalcPointJacobian6D(rbdl_model_, q, body_id_[6], ee_position_, j_temp, true);
 
     Matrix<double, 6, 7> j;
 
@@ -48,8 +47,6 @@ public:
       j.block<3, 7>(i * 3, 0) = j_temp.block<3, 7>(3 - i * 3, 0);
     return j;
   }
-
-  
 
   MatrixXd getJointLimit()
   {
@@ -67,8 +64,7 @@ public:
 private:
   void initialize()
   {
-    rbdl_model_ = make_shared<Model>();
-    rbdl_model_->gravity = Vector3d(0., 0, -9.81);
+    rbdl_model_.gravity = Vector3d(0., 0, -9.81);
     mass[0] = 1.0;
     mass[1] = 1.0;
     mass[2] = 1.0;
@@ -120,13 +116,13 @@ private:
       body_[i] = Body(mass[i], com_position_[i], inertia[i]);
       joint_[i] = Joint(JointTypeRevolute, axis[i]);
       if (i == 0)
-        body_id_[i] = rbdl_model_->AddBody(0, Math::Xtrans(joint_position_[i]), joint_[i], body_[i]);
+        body_id_[i] = rbdl_model_.AddBody(0, Math::Xtrans(joint_position_[i]), joint_[i], body_[i]);
       else
-        body_id_[i] = rbdl_model_->AddBody(body_id_[i - 1], Math::Xtrans(joint_position_[i]), joint_[i], body_[i]);
+        body_id_[i] = rbdl_model_.AddBody(body_id_[i - 1], Math::Xtrans(joint_position_[i]), joint_[i], body_[i]);
     }
   }
 
-  std::shared_ptr<RigidBodyDynamics::Model> rbdl_model_;
+  RigidBodyDynamics::Model rbdl_model_;
   double mass[7];
   unsigned int body_id_[7];
   Vector3d global_joint_position[7];

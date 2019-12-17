@@ -19,12 +19,10 @@ int main()
 
   Matrix3d ellipsoid;
   Vector3d target_axis_;
-  ellipsoid << 0.01, 0, 0,
-              0, 0.01, 0,
-              0, 0, 0.8;
-  target_axis_ << 0.924, 0.383, 0.0; // zaxis
+    ellipsoid << 0.04, 0, 0,
+        0, 0.6, 0,
+        0, 0, 0.85;
   cost->setDesiredEllipsoid(ellipsoid);
-  constraint_ori->setTargetAxis(target_axis_);
 
   // 1. define the problem
   Problem nlp;
@@ -42,6 +40,11 @@ int main()
   // 3 . solve
   ipopt.Solve(nlp);
   Eigen::VectorXd q = nlp.GetOptVariables()->GetValues();
+  std::cout << q.transpose() << std::endl;
+  MatrixXd jv = model_->getJacobian(q).block<3, 7>(0, 0);
+  Matrix3d jvt = jv*jv.transpose();
+  Matrix3d co = jvt.log() - ellipsoid.log();
+  std::cout << "original function value : " << (co * co).trace() << std::endl;
   for (int i = 0; i < 7; i++)
     q[i] = q[i] * 180 / M_PI;
   std::cout << q.transpose() << std::endl;

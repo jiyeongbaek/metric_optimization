@@ -16,10 +16,10 @@ JointVariables::JointVariables(RobotModelPtr &model) : JointVariables(model, "jo
 JointVariables::JointVariables(RobotModelPtr &model, const std::string &name) : VariableSet(7, name), model_(model)
 {
     q_.setZero(7);
-    // q_(0) = M_PI / 6;
-    // q_(3) = -M_PI / 2; //-1.571;
-    // q_(5) = M_PI / 2;  //1.571;
-    // q_(6) = M_PI / 6;  //0.785;
+    q_(0) = M_PI / 6;
+    q_(3) = -M_PI / 2; //-1.571;
+    q_(5) = M_PI / 2;  //1.571;
+    q_(6) = M_PI / 6;  //0.785;
 }
 
 void JointVariables::SetVariables(const Eigen::VectorXd &x)
@@ -57,10 +57,10 @@ VectorXd PositionConstraint::GetValues() const
 Component::VecBound PositionConstraint::GetBounds() const
 {
     Component::VecBound b(GetRows());
-    for (int i = 0; i < GetRows(); i++)
-    {
-        b[i] = BoundGreaterZero;
-    }
+    b[0] = BoundGreaterZero;
+        b[1] = Bounds(0.15, inf);
+    b[2] = Bounds(0.6, inf);;
+
     return b;
 }
 
@@ -101,7 +101,8 @@ Component::VecBound RotationConstraint::GetBounds() const
     for (int i = 0; i < GetRows(); i++)
     {
         // b[i] = Bounds(-epsilon_, +epsilon_);
-        b[i] = Bounds(-1.0, 1.0);
+        b[i] = Bounds(-inf, -0.995);
+    
     }
     return b;
 }

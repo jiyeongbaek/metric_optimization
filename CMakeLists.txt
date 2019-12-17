@@ -22,6 +22,7 @@ catkin_package(
   std_msgs  
   DEPENDS 
 )
+add_subdirectory($ENV{HOME}/git/dlib dlib_build)
 
 ###########
 ## Build ##
@@ -32,14 +33,19 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
   ${RBDL_INCLUDE_DIRS}  
+  ${DLIB_INCLUDE_DIRECTORY}
 )
 
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME}_lib
   src/${PROJECT_NAME}/main.cpp
   src/${PROJECT_NAME}/optimization/problem.cpp
 )
 
-target_link_libraries(${PROJECT_NAME}
+add_library(${PROJECT_NAME}_penalty_lib
+  src/${PROJECT_NAME}/test.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}_lib
   ${catkin_LIBRARIES}
   ifopt::ifopt_ipopt
   ipopt
@@ -49,14 +55,24 @@ target_link_libraries(${PROJECT_NAME}
   # coinlapack
   # coinmetis
   coinhsl
-  dlib::dlib
 )
-add_subdirectory($ENV{HOME}/git/dlib dlib_build)
 
-add_executable(${PROJECT_NAME}_execute src/${PROJECT_NAME}/main.cpp)
+target_link_libraries(${PROJECT_NAME}_penalty_lib
+  ${catkin_LIBRARIES}
+  ${DLIB_LIBRARIES}
+  dlib::dlib
+  rbdl
+)
+add_executable(${PROJECT_NAME}_ipopt src/${PROJECT_NAME}/main.cpp)
+add_executable(${PROJECT_NAME}_penalty src/${PROJECT_NAME}/test.cpp)
 
-target_link_libraries(${PROJECT_NAME}_execute
-  ${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME}_ipopt
+  ${PROJECT_NAME}_lib
+)
+
+target_link_libraries(${PROJECT_NAME}_penalty
+  ${PROJECT_NAME}_penalty_lib
+  dlib::dlib
 )
 # http://www.hsl.rl.ac.uk/download/coinhsl-archive/2014.01.17/
 # https://projects.coin-or.org/Ipopt
