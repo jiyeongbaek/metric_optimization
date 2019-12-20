@@ -51,16 +51,15 @@ int main()
     Vector7d result_;
     for (int i = 0; i < 7; i++)
     {
+        result_[i] = result.x(i);
         result.x(i) = result.x(i) * 180 / M_PI;
     }
-    result_ << -1.39117083, -0.804575646  , 1.14795111 , -1.76591437  ,0.745291994  , 1.51584423 ,-0.477745851;
     std::cout << "solution x: \n"
          << result.x << std::endl;
     std::cout << "object function value   : " << result.y << std::endl;
     MatrixXd jv = model_->getJacobian(result_).block<3, 7>(0, 0);
     Matrix3d jvt = jv*jv.transpose();
-    Matrix3d co = jvt.log() - ellipsoid.log();
-    std::cout << "original function value : " << (co * co).trace() << std::endl;
-
+    std::cout << "manipulability : " << sqrt(jvt.determinant()) << std::endl;
+    std::cout << "position       : " << model_->getTransform(result_).translation().transpose() << std::endl;
     return 0;
 }
